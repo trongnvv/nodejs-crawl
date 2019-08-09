@@ -1,27 +1,16 @@
 
 const fs = require('fs');
 const FileHandle = require('../utils/file_handle');
-
+const CoreApi = require('../base/core_api');
 class ImageHandle {
     constructor() {
+        this.coreApi = new CoreApi();
         this.fileHandle = new FileHandle();
     }
 
     async start() {
-        readdir('http://www.remminhdang.com/image_upload/product/', function (err, files) {
-            //handling error
-            if (err) {
-                return console.log('Unable to scan directory: ' + err);
-            }
-            //listing all files using forEach
-            files.forEach(function (file) {
-                // Do whatever you want to do with the file
-                console.log(file);
-            });
-        });
-
-        // await this.downloadProduct();
-        // await this.downloadCategory();
+        await this.downloadProduct();
+        await this.downloadCategory();
     }
 
     async downloadProduct() {
