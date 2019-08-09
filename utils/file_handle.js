@@ -23,18 +23,6 @@ class FileHandle {
         })
     }
 
-    async downloadFile(url, dir, filename) {
-        try {
-            if (!fs.existsSync(dir)) {
-                fs.mkdirSync(dir);
-            }
-            let image_path = './' + dir + '/' + filename + '.jpg';
-            await download_image(url, image_path);
-        } catch (error) {
-            console.log(error);
-        }
-    }
-
     writeFile(item, name_file) {
         let data = JSON.stringify(item);
         if (!fs.existsSync('out')) {
