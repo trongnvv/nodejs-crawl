@@ -1,25 +1,114 @@
 const CoreApi = require('../base/core_api');
 const cheerio = require('cheerio');
 const FileHandle = require('./file_handle');
+const config = require('../config');
 class CrawlHandle {
     constructor() {
         this.coreApi = new CoreApi();
         this.fileHandle = new FileHandle();
     }
 
+    async start() {
+        // await this.crawl(config.URl_CRAWL);
+        // await this.saveProductAndCategory();
+        await this.saveFullProduct();
+    }
+
     async crawl(url) {
         try {
             let urls = await this.getUrlPagesProducts(url);
-            let products = [];
+            let data = [];
+
             for (let i = 0; i < urls.length; i++) {
-                let product = await this.geListProductDetail(urls[i]);
-                products.push(product);
+                try {
+                    let data_page = await this.geListProductDetail(urls[i]);
+                    data.push(data_page);
+                } catch (error) {
+                    console.log(error);
+                }
             }
 
-            this.fileHandle.writeFile(products);
+            await this.fileHandle.writeFile(data, 'out.json');
+            return;
         } catch (error) {
             console.log(error);
         }
+    }
+
+    async saveFullProduct() {
+        try {
+            let data = await this.fileHandle.readFile('product.json');
+            let products = [];
+            for (let i = 0; i < data.length; i++) {
+                try {
+                    let product = await this.getFullProduct(data[i]);
+                    console.log('get_product', product);
+                    products.push(product);
+                } catch (error) {
+                    console.log(error);
+                }
+            }
+            await this.fileHandle.writeFile(products, 'full_product.json');
+            return;
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    async getFullProduct(product) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                let html = await this.coreApi.get(product.src);
+                let $ = cheerio.load(html);
+                // let idElment = '.size-full';
+                let idElment = '.alignnone';
+                if ($(idElment).length > 0) {
+                    $(idElment).each(function (j, elm) {
+                        console.log($(idElment).length);
+                        if (j == 0 && !!$(this).attr().height) {
+                            product['src'] = $(this).attr().src;
+                            product['active'] = true;
+                            resolve(product);
+                        } else if (j == $(idElment).length - 1) {
+                            product['active'] = false;
+                            resolve(product);
+                        }
+                    });
+
+                } else {
+                    let idElment = '.size-full';
+                    if ($(idElment).length > 0) {
+                        $(idElment).each(function (j, elm) {
+                            if (j == 0 && !!$(this).attr().height) {
+                                product['src'] = $(this).attr().src;
+                                product['active'] = true;
+                                resolve(product);
+                            } else if (j == $(idElment).length - 1) {
+                                product['active'] = false;
+                                resolve(product);
+                            }
+                        });
+                    } else {
+                        let idElment = '.size-large';
+                        if ($(idElment).length > 0) {
+                            $(idElment).each(function (j, elm) {
+                                if (j == 0 && !!$(this).attr().height) {
+                                    product['src'] = $(this).attr().src;
+                                    product['active'] = true;
+                                    resolve(product);
+                                }
+                            });
+                        } else {
+                            product['active'] = false;
+                            resolve(product);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.log(error);
+                reject(error)
+            }
+        })
     }
 
     getUrlPagesProducts(url) {
@@ -57,7 +146,7 @@ class CrawlHandle {
                 let $ = cheerio.load(html);
                 let isDone = false;
                 let data = {
-                    titile: page.name,
+                    title: page.name,
                     image_src: [],
                     products: [],
                 }
@@ -115,6 +204,39 @@ class CrawlHandle {
                 reject(error)
             }
         })
+    }
+
+    async saveProductAndCategory() {
+        try {
+            let categories = [];
+            let products = [];
+            let data = await this.fileHandle.readFile('out.json');
+            for (let i = 0; i < data.length; i++) {
+                let category = {
+                    id: i,
+                    title: data[i].title,
+                    image_src: data[i].image_src,
+                }
+
+                for (let j = 0; j < data[i].products.length; j++) {
+                    let product = {
+                        ...data[i].products[j],
+                        category_id: i,
+                    }
+                    products.push(product);
+                }
+                categories.push(category);
+            }
+            await this.fileHandle.writeFile(products, 'product.json');
+            await this.fileHandle.writeFile(categories, 'category.json');
+            return;
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    async download() {
+
     }
 
 }

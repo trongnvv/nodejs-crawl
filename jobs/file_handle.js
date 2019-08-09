@@ -35,14 +35,31 @@ class FileHandle {
         }
     }
 
-    writeFile(item) {
+    writeFile(item, name_file) {
         let data = JSON.stringify(item);
-        fs.writeFile('out.json', data, (err) => {
-            if (err) throw err;
-            console.log('Data written to file');
-        });
+        if (!fs.existsSync('out')) {
+            fs.mkdirSync('out');
+        }
+        return new Promise((resolve, reject) => {
+            fs.writeFile('out/' + name_file, data, (err) => {
+                if (err) reject();
+                console.log('Data written to file ' + name_file);
+                resolve();
+            });
+        })
     }
 
+    readFile(name_file) {
+        return new Promise((resolve, reject) => {
+            fs.readFile('out/' + name_file, { encoding: 'utf-8' }, function (err, data) {
+                if (!err) {
+                    resolve(JSON.parse(data));
+                } else {
+                    reject(err);
+                }
+            });
+        })
+    }
 }
 
 module.exports = FileHandle;

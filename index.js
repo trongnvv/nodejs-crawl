@@ -7,9 +7,20 @@ class Boot {
 
     start() {
         console.log('START CRAWL');
-        this.crawlHandle.crawl(config.URl_CRAWL);
+        this.crawlHandle.start();
+    }
+
+    download() {
+        console.log('START DOWNLOAD');
+        this.crawlHandle.download();
     }
 }
 
 var instance = new Boot();
-instance.start();
+if (process.argv.slice(2)[0] == 'start') {
+    instance.start();
+} else if (process.argv.slice(2)[0] == 'download') {
+    instance.download();
+} else {
+    console.log('please select process');
+}
