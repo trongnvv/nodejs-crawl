@@ -2,7 +2,7 @@
 const fs = require('fs'),
     axios = require('axios');
 
-class DownloadHandle {
+class FileHandle {
     constructor() {
 
     }
@@ -35,6 +35,14 @@ class DownloadHandle {
         }
     }
 
+    writeFile(item) {
+        let data = JSON.stringify(item);
+        fs.writeFile('out.json', data, (err) => {
+            if (err) throw err;
+            console.log('Data written to file');
+        });
+    }
+
 }
 
-module.exports = DownloadHandle;
+module.exports = FileHandle;
