@@ -1,8 +1,9 @@
 const CrawlHandle = require('./jobs/crawl_handle');
-const config = require('./config');
+const ImageHandle = require('./jobs/image_handle');
 class Boot {
     constructor() {
         this.crawlHandle = new CrawlHandle();
+        this.imageHandle = new ImageHandle();
     }
 
     start() {
@@ -12,7 +13,7 @@ class Boot {
 
     download() {
         console.log('START DOWNLOAD');
-        this.crawlHandle.download();
+        this.imageHandle.start();
     }
 }
 

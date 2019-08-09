@@ -1,6 +1,6 @@
 const CoreApi = require('../base/core_api');
 const cheerio = require('cheerio');
-const FileHandle = require('./file_handle');
+const FileHandle = require('../utils/file_handle');
 const config = require('../config');
 class CrawlHandle {
     constructor() {
@@ -9,8 +9,8 @@ class CrawlHandle {
     }
 
     async start() {
-        // await this.crawl(config.URl_CRAWL);
-        // await this.saveProductAndCategory();
+        await this.crawl(config.URl_CRAWL);
+        await this.saveProductAndCategory();
         await this.saveFullProduct();
     }
 
@@ -36,13 +36,13 @@ class CrawlHandle {
     }
 
     async saveFullProduct() {
+
         try {
             let data = await this.fileHandle.readFile('product.json');
             let products = [];
             for (let i = 0; i < data.length; i++) {
                 try {
                     let product = await this.getFullProduct(data[i]);
-                    console.log('get_product', product);
                     products.push(product);
                 } catch (error) {
                     console.log(error);
@@ -53,6 +53,31 @@ class CrawlHandle {
         } catch (error) {
             console.log(error);
         }
+
+    }
+
+    getImage($, product, idElment) {
+        return new Promise((resolve, reject) => {
+            if ($(idElment).length > 0) {
+                let isDone = false;
+                $(idElment).each(function (i, elm) {
+                    if (!isDone) {
+                        if ($(this).attr().src) {
+                            isDone = true;
+                            product['src'] = $(this).attr().src;
+                            product['active'] = true;
+                            resolve(product);
+                        } else if ($(idElment).length - 1 == i) {
+                            isDone = true;
+                            product['src'] = $(this).attr().src;
+                            product['active'] = false;
+                            resolve(product);
+                        }
+                    }
+                });
+
+            }
+        })
     }
 
     async getFullProduct(product) {
@@ -63,47 +88,17 @@ class CrawlHandle {
                 // let idElment = '.size-full';
                 let idElment = '.alignnone';
                 if ($(idElment).length > 0) {
-                    $(idElment).each(function (j, elm) {
-                        console.log($(idElment).length);
-                        if (j == 0 && !!$(this).attr().height) {
-                            product['src'] = $(this).attr().src;
-                            product['active'] = true;
-                            resolve(product);
-                        } else if (j == $(idElment).length - 1) {
-                            product['active'] = false;
-                            resolve(product);
-                        }
-                    });
-
-                } else {
-                    let idElment = '.size-full';
-                    if ($(idElment).length > 0) {
-                        $(idElment).each(function (j, elm) {
-                            if (j == 0 && !!$(this).attr().height) {
-                                product['src'] = $(this).attr().src;
-                                product['active'] = true;
-                                resolve(product);
-                            } else if (j == $(idElment).length - 1) {
-                                product['active'] = false;
-                                resolve(product);
-                            }
-                        });
-                    } else {
-                        let idElment = '.size-large';
-                        if ($(idElment).length > 0) {
-                            $(idElment).each(function (j, elm) {
-                                if (j == 0 && !!$(this).attr().height) {
-                                    product['src'] = $(this).attr().src;
-                                    product['active'] = true;
-                                    resolve(product);
-                                }
-                            });
-                        } else {
-                            product['active'] = false;
-                            resolve(product);
-                        }
-                    }
+                    product = await this.getImage($, product, idElment);
                 }
+                idElment = '.size-full';
+                if ($(idElment).length > 0 && !product.active) {
+                    product = await this.getImage($, product, idElment);
+                }
+                idElment = '.size-large';
+                if ($(idElment).length > 0 && !product.active) {
+                    product = await this.getImage($, product, idElment);
+                }
+                resolve(product);
             } catch (error) {
                 console.log(error);
                 reject(error)
@@ -233,10 +228,6 @@ class CrawlHandle {
         } catch (error) {
             console.log(error);
         }
-    }
-
-    async download() {
-
     }
 
 }
